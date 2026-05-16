@@ -55,3 +55,6 @@ Thumbs.db
 !.vscode/extensions.json
 !.vscode/settings.example.json
 .idea/
+
+docker-compose.yml
+!docker-compose.example.yml
