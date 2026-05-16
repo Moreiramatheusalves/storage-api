@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Storage Admin | Arquivos</title>
+  <link rel="stylesheet" href="/public/admin.css" />
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="small">Storage API</div>
+        <div class="title">Admin Console</div>
+        <div class="desc">Navegue por diretórios, visualize arquivos e administre o armazenamento.</div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a class="sidebar-link" data-nav="dashboard" href="/admin/dashboard">Dashboard</a>
+        <a class="sidebar-link" data-nav="applications" href="/admin/applications-ui">Aplicações</a>
+        <a class="sidebar-link" data-nav="history" href="/admin/history-ui">Histórico</a>
+        <a class="sidebar-link" data-nav="storage" href="/admin/storage">Arquivos</a>
+        <a class="sidebar-link" data-nav="diagnostics" href="/admin/diagnostics-ui">Diagnóstico</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="btn btn-secondary btn-block" data-action="logout">Sair</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="topbar">
+          <div>
+            <h1>Gerenciador de arquivos</h1>
+            <p>Explore o storage, visualize imagens, entre em diretórios e remova itens.</p>
+          </div>
+          <div class="topbar-actions">
+            <button class="btn btn-secondary" id="backBtn">Voltar</button>
+            <button class="btn btn-primary" id="refreshBtn">Atualizar</button>
+          </div>
+        </div>
+
+        <section class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Filtro por aplicação</h2>
+              <p class="card-subtitle">A pasta física continua sendo o UUID, mas o painel mostra o nome da aplicação.
+              </p>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="col-8">
+              <label for="applicationFilter" style="display:block;">
+                <span style="display:block; margin-bottom:8px; font-size:14px; font-weight:700;">Aplicação</span>
+                <select class="select" id="applicationFilter">
+                  <option value="">Todas as aplicações</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="col-4" style="display:flex; gap:10px; align-items:end;">
+              <button class="btn btn-primary btn-block" id="openApplicationBtn">Abrir aplicação</button>
+              <button class="btn btn-secondary btn-block" id="clearApplicationBtn">Limpar</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" style="margin-top:20px;">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Caminho atual</h2>
+              <p class="card-subtitle">Use a navegação abaixo para se localizar dentro do storage.</p>
+            </div>
+          </div>
+
+          <div class="breadcrumbs" id="breadcrumbs"></div>
+        </section>
+
+        <div class="grid grid-3" style="margin-top:20px;">
+          <div class="card kpi">
+            <div class="kpi-label">Diretórios</div>
+            <div class="kpi-value" id="directoriesCount">0</div>
+            <div class="kpi-note">Pastas dentro do nível atual</div>
+          </div>
+
+          <div class="card kpi">
+            <div class="kpi-label">Arquivos</div>
+            <div class="kpi-value" id="filesCount">0</div>
+            <div class="kpi-note">Arquivos dentro do nível atual</div>
+          </div>
+
+          <div class="card kpi">
+            <div class="kpi-label">Tipos detectados</div>
+            <div class="kpi-value" id="typesCount">0</div>
+            <div class="kpi-note">Extensões diferentes encontradas</div>
+          </div>
+        </div>
+
+        <section class="card" style="margin-top:20px;">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Conteúdo do diretório</h2>
+              <p class="card-subtitle" id="statsSummary">Resumo do diretório atual.</p>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Tipo</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="fileList"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="/public/admin.js"></script>
+  <script>
+    let currentPath = '';
+    let applicationsById = new Map();
+
+    function getInitialApplicationId() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('applicationId') || '';
+    }
+
+    function shortUuid(value) {
+      const text = String(value || '');
+      if (text.length <= 16) return text;
+      return `${text.slice(0, 8)}…${text.slice(-6)}`;
+    }
+
+    function buildTargetPath(name) {
+      return currentPath ? `${currentPath}/${name}` : name;
+    }
+
+    function getApplicationForPath(targetPath) {
+      const firstSegment = String(targetPath || '').split('/').filter(Boolean)[0];
+      return firstSegment ? applicationsById.get(firstSegment) : null;
+    }
+
+    function renderDisplayName(entry, fallbackName) {
+      if (entry && entry.applicationName && entry.applicationId) {
+        return `
+          <div><strong>${escapeHtml(entry.applicationName)}</strong></div>
+          <div style="color:#6b7280; font-size:13px;">
+            UUID: <span class="inline-code">${escapeHtml(entry.applicationId)}</span>
+          </div>
+        `;
+      }
+
+      const app = getApplicationForPath(entry?.path || fallbackName);
+
+      if (app && entry?.path === app.id) {
+        return `
+          <div><strong>${escapeHtml(app.name)}</strong></div>
+          <div style="color:#6b7280; font-size:13px;">
+            UUID: <span class="inline-code">${escapeHtml(app.id)}</span>
+          </div>
+        `;
+      }
+
+      return `
+        <div><strong>${escapeHtml(fallbackName)}</strong></div>
+        <div style="color:#6b7280; font-size:13px;">${escapeHtml(entry?.path || fallbackName || '/')}</div>
+      `;
+    }
+
+    function renderBreadcrumbs() {
+      const container = document.getElementById('breadcrumbs');
+      const parts = currentPath ? currentPath.split('/') : [];
+
+      let html = `<a class="crumb" href="#" onclick="goToPath(''); return false;">/</a>`;
+
+      let acc = '';
+      for (const part of parts) {
+        acc = acc ? `${acc}/${part}` : part;
+        const app = applicationsById.get(part);
+        const label = app ? `${app.name} (${shortUuid(part)})` : part;
+
+        html += `<span>›</span><a class="crumb" href="#" onclick="goToPath('${escapeHtml(acc)}'); return false;">${escapeHtml(label)}</a>`;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function syncApplicationFilterWithPath() {
+      const select = document.getElementById('applicationFilter');
+      const firstSegment = currentPath ? currentPath.split('/')[0] : '';
+
+      if (firstSegment && applicationsById.has(firstSegment)) {
+        select.value = firstSegment;
+      } else if (!currentPath) {
+        select.value = '';
+      }
+    }
+
+    function updateUrl() {
+      const appId = currentPath ? currentPath.split('/')[0] : '';
+      const url = new URL(window.location.href);
+
+      if (appId && applicationsById.has(appId)) {
+        url.searchParams.set('applicationId', appId);
+      } else {
+        url.searchParams.delete('applicationId');
+      }
+
+      window.history.replaceState({}, '', url.toString());
+    }
+
+    function goToPath(path) {
+      currentPath = path;
+      syncApplicationFilterWithPath();
+      updateUrl();
+      loadList();
+    }
+
+    function renderStats(stats) {
+      document.getElementById('directoriesCount').textContent = stats.directories || 0;
+      document.getElementById('filesCount').textContent = stats.files || 0;
+      document.getElementById('typesCount').textContent = Object.keys(stats.types || {}).length;
+
+      const typesText = Object.entries(stats.types || {})
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(' • ');
+
+      document.getElementById('statsSummary').textContent =
+        `Diretórios: ${stats.directories || 0} • Arquivos: ${stats.files || 0}${typesText ? ' • Tipos: ' + typesText : ''}`;
+    }
+
+    async function loadApplicationsFilter() {
+      const data = await api('/admin/applications');
+      const applications = data.applications || [];
+      const select = document.getElementById('applicationFilter');
+
+      applicationsById = new Map(applications.map(app => [app.id, app]));
+
+      const options = ['<option value="">Todas as aplicações</option>'];
+
+      applications.forEach(app => {
+        options.push(`
+          <option value="${escapeHtml(app.id)}">
+            ${escapeHtml(app.name)} — ${escapeHtml(app.id)}
+          </option>
+        `);
+      });
+
+      select.innerHTML = options.join('');
+
+      const initialApplicationId = getInitialApplicationId();
+
+      if (initialApplicationId && applicationsById.has(initialApplicationId)) {
+        currentPath = initialApplicationId;
+        select.value = initialApplicationId;
+      }
+    }
+
+    async function requestDelete(target, recursive = false) {
+      const params = new URLSearchParams({
+        path: target
+      });
+
+      if (recursive) {
+        params.set('recursive', 'true');
+      }
+
+      return api(`/admin/storage?${params.toString()}`, {
+        method: 'DELETE'
+      });
+    }
+
+    async function deleteItem(target, isDir = false) {
+      if (!target) {
+        alert('A raiz do storage não pode ser excluída.');
+        return;
+      }
+
+      const firstMessage = isDir
+        ? `Deseja excluir o diretório "${target}"?\n\nSe ele tiver arquivos dentro, você será avisado antes da exclusão recursiva.`
+        : `Tem certeza que deseja excluir o arquivo "${target}"?`;
+
+      const confirmed = confirm(firstMessage);
+      if (!confirmed) return;
+
+      try {
+        const data = await requestDelete(target, false);
+        alert(data.message || 'Item excluído com sucesso.');
+        await loadList();
+      } catch (error) {
+        const requiresRecursive =
+          error.statusCode === 409 &&
+          error.details &&
+          error.details.requiresRecursive === true;
+
+        if (!requiresRecursive) {
+          alert(error.message);
+          return;
+        }
+
+        const entries = Number(error.details.entries || 0);
+        const recursiveConfirmed = confirm(
+          `O diretório "${target}" não está vazio.\n\n` +
+          `Itens encontrados neste nível: ${entries}\n\n` +
+          `Deseja excluir este diretório e todo o conteúdo dentro dele?\n\n` +
+          `Essa ação não pode ser desfeita pelo painel.`
+        );
+
+        if (!recursiveConfirmed) {
+          return;
+        }
+
+        try {
+          const data = await requestDelete(target, true);
+          alert(data.message || 'Diretório removido com sucesso.');
+          await loadList();
+        } catch (recursiveError) {
+          alert(recursiveError.message);
+        }
+      }
+    }
+
+    async function loadList() {
+      renderBreadcrumbs();
+
+      try {
+        const data = await api(`/admin/storage/list?path=${encodeURIComponent(currentPath)}`);
+        const items = data.items || [];
+        const entries = data.entries || [];
+        const stats = data.stats || { files: 0, directories: 0, types: {} };
+
+        renderStats(stats);
+
+        const tbody = document.getElementById('fileList');
+
+        if (!items.length) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="3">
+                <div class="empty-state">Este diretório está vazio.</div>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        const rows = entries.length
+          ? entries
+          : items.map(item => {
+            const isDir = item.endsWith('/');
+            const cleanName = item.replace(/\/$/, '');
+            return {
+              name: cleanName,
+              displayName: cleanName,
+              path: buildTargetPath(cleanName),
+              isDirectory: isDir,
+              isFile: !isDir,
+              type: isDir ? 'directory' : 'file'
+            };
+          });
+
+        tbody.innerHTML = rows.map(entry => {
+          const isDir = Boolean(entry.isDirectory);
+          const cleanName = entry.name;
+          const target = entry.path || buildTargetPath(cleanName);
+          const preview = !isDir && isImageFile(cleanName)
+            ? `<img class="storage-thumb" src="/admin/storage/read?path=${encodeURIComponent(target)}" alt="${escapeHtml(cleanName)}" />`
+            : `<span class="storage-icon">${isDir ? 'DIR' : 'FILE'}</span>`;
+
+          return `
+            <tr>
+              <td>
+                <div class="storage-item">
+                  ${preview}
+                  <div>
+                    ${renderDisplayName(entry, cleanName)}
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="badge ${isDir ? 'badge-warning' : 'badge-info'}">
+                  ${isDir ? 'Diretório' : 'Arquivo'}
+                </span>
+                ${entry.applicationIsActive === false ? '<span class="badge badge-danger" style="margin-left:6px;">INATIVA</span>' : ''}
+              </td>
+              <td>
+                <div class="table-actions">
+                  ${isDir
+              ? `<button class="btn btn-secondary" onclick="goToPath('${escapeHtml(target)}')">Abrir</button>`
+              : `<a class="btn btn-secondary" target="_blank" href="/admin/storage/read?path=${encodeURIComponent(target)}">Visualizar</a>`
+            }
+                  <button class="btn btn-danger" onclick="deleteItem('${escapeHtml(target)}', ${isDir})">Excluir</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (error) {
+        document.getElementById('fileList').innerHTML = `
+          <tr>
+            <td colspan="3">
+              <div class="empty-state">Não foi possível carregar os arquivos.</div>
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    document.getElementById('backBtn').addEventListener('click', () => {
+      if (!currentPath) return;
+      const parts = currentPath.split('/');
+      parts.pop();
+      currentPath = parts.join('/');
+      syncApplicationFilterWithPath();
+      updateUrl();
+      loadList();
+    });
+
+    document.getElementById('refreshBtn').addEventListener('click', loadList);
+
+    document.getElementById('openApplicationBtn').addEventListener('click', () => {
+      const applicationId = document.getElementById('applicationFilter').value;
+
+      if (!applicationId) {
+        goToPath('');
+        return;
+      }
+
+      goToPath(applicationId);
+    });
+
+    document.getElementById('clearApplicationBtn').addEventListener('click', () => {
+      document.getElementById('applicationFilter').value = '';
+      goToPath('');
+    });
+
+    Promise.all([loadApplicationsFilter()]).then(() => {
+      syncApplicationFilterWithPath();
+      updateUrl();
+      return loadList();
+    }).catch(() => {
+      document.getElementById('fileList').innerHTML = `
+        <tr>
+          <td colspan="3">
+            <div class="empty-state">Não foi possível carregar os arquivos.</div>
+          </td>
+        </tr>
+      `;
+    });
+  </script>
+</body>
+
+</html>

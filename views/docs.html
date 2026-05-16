@@ -1,0 +1,1166 @@
+<!-- views/docs.html -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Storage API | Documentação Interna</title>
+    <link rel="stylesheet" href="/public/admin.css" />
+
+    <style>
+        .docs-shell .sidebar {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+
+        .docs-section {
+            margin-bottom: 20px;
+        }
+
+        .docs-section h2 {
+            margin: 0 0 10px;
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .docs-section p,
+        .docs-section li {
+            color: #475569;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        .docs-list {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        .endpoint-card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+        }
+
+        .endpoint-head {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .method {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 74px;
+            height: 34px;
+            padding: 0 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .06em;
+        }
+
+        .method-post {
+            background: #ecfdf5;
+            color: #166534;
+        }
+
+        .method-get {
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .method-delete {
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        .endpoint-path {
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: 14px;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 12px;
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 14px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .docs-table th,
+        .docs-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #edf2f7;
+            text-align: left;
+            font-size: 14px;
+            vertical-align: top;
+        }
+
+        .docs-table th {
+            width: 220px;
+            background: #f8fafc;
+            color: #334155;
+            font-weight: 800;
+        }
+
+        .language-nav {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .language-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 40px;
+            padding: 0 14px;
+            border-radius: 999px;
+            background: #fff;
+            border: 1px solid var(--border);
+            color: #334155;
+            font-weight: 700;
+        }
+
+        .language-link:hover {
+            background: #f8fafc;
+        }
+
+        .callout {
+            border-radius: 16px;
+            padding: 18px;
+            border: 1px solid var(--border);
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        }
+
+        .callout strong {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .callout-warning {
+            background: linear-gradient(180deg, #fff 0%, #fff7ed 100%);
+            border-color: #fed7aa;
+        }
+
+        .callout-danger {
+            background: linear-gradient(180deg, #fff 0%, #fef2f2 100%);
+            border-color: #fecaca;
+        }
+
+        .muted-note {
+            color: #64748b;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .docs-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 20px 0;
+        }
+
+        @media (max-width: 1100px) {
+            .docs-shell .sidebar {
+                height: auto;
+                position: static;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell docs-shell">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="small">Storage API</div>
+                <div class="title">Documentação</div>
+                <div class="desc">
+                    Guia interno de integração, operação e manutenção da API de storage.
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a class="sidebar-link active" href="/docs">Visão geral</a>
+                <a class="sidebar-link" href="#urls">URLs</a>
+                <a class="sidebar-link" href="#persistencia">Persistência</a>
+                <a class="sidebar-link" href="#auth">Autenticação</a>
+                <a class="sidebar-link" href="#paths">Paths</a>
+                <a class="sidebar-link" href="#types">Tipos aceitos</a>
+                <a class="sidebar-link" href="#upload">Upload</a>
+                <a class="sidebar-link" href="#list">Listagem</a>
+                <a class="sidebar-link" href="#read">Leitura</a>
+                <a class="sidebar-link" href="#delete">Exclusão</a>
+                <a class="sidebar-link" href="#admin">Admin</a>
+                <a class="sidebar-link" href="#errors">Erros</a>
+                <a class="sidebar-link" href="#examples">Exemplos</a>
+                <a class="sidebar-link" href="/admin">Entrar no admin</a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a class="btn btn-primary btn-block" href="/admin">Acessar painel</a>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="main-inner">
+                <div class="topbar">
+                    <div>
+                        <h1>Documentação interna da Storage API</h1>
+                        <p>Como integrar, operar e manter a Storage API sem expor tokens nem perder dados.</p>
+                    </div>
+                    <div class="topbar-actions">
+                        <a class="btn btn-secondary" href="#examples">Ver exemplos</a>
+                        <a class="btn btn-primary" href="/admin">Área administrativa</a>
+                    </div>
+                </div>
+
+                <section class="card docs-section">
+                    <div class="card-header">
+                        <div>
+                            <h2>O que esta API faz</h2>
+                            <p class="card-subtitle">
+                                A Storage API recebe arquivos autenticados por token de aplicação, salva os arquivos em
+                                diretórios isolados por aplicação e registra histórico operacional em SQLite.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-3">
+                        <div class="card kpi">
+                            <div class="kpi-label">Autenticação</div>
+                            <div class="kpi-value" style="font-size:22px;">Token</div>
+                            <div class="kpi-note">
+                                Cada aplicação usa seu próprio <span class="inline-code">X-Storage-Token</span>.
+                            </div>
+                        </div>
+
+                        <div class="card kpi">
+                            <div class="kpi-label">Upload máximo</div>
+                            <div class="kpi-value" style="font-size:22px;">10 MB</div>
+                            <div class="kpi-note">
+                                Padrão atual. Configurável por <span class="inline-code">MAX_UPLOAD_SIZE</span>.
+                            </div>
+                        </div>
+
+                        <div class="card kpi">
+                            <div class="kpi-label">Banco oficial</div>
+                            <div class="kpi-value" style="font-size:22px;">SQLite</div>
+                            <div class="kpi-note">
+                                Aplicações, tokens, usuários admin e histórico ficam no SQLite.
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card docs-section">
+                    <div class="card-header">
+                        <div>
+                            <h2>Fluxo recomendado de uso</h2>
+                            <p class="card-subtitle">
+                                Use a API desse jeito para evitar exposição indevida do token no frontend.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="callout">
+                        <strong>Fluxo correto</strong>
+                        <div class="muted-note">
+                            O frontend envia a imagem para o seu backend principal. O backend principal conversa com a
+                            Storage API usando o header <span class="inline-code">X-Storage-Token</span>.
+                            Assim o token nunca fica exposto no navegador.
+                        </div>
+                    </div>
+
+                    <div style="margin-top:18px;" class="grid grid-3">
+                        <div class="card">
+                            <h3 class="card-title" style="font-size:18px;">1. Upload</h3>
+                            <p class="card-subtitle">
+                                Seu backend envia um <span class="inline-code">multipart/form-data</span> com o arquivo.
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <h3 class="card-title" style="font-size:18px;">2. Persistência</h3>
+                            <p class="card-subtitle">
+                                A Storage API valida o token, salva no volume Docker e devolve o path relativo.
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <h3 class="card-title" style="font-size:18px;">3. Leitura</h3>
+                            <p class="card-subtitle">
+                                Seu backend lê o arquivo usando o token e devolve o binário ou uma URL própria ao
+                                frontend.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="callout callout-warning" style="margin-top:18px;">
+                        <strong>Atenção sobre o fileUrl</strong>
+                        <div class="muted-note">
+                            O campo <span class="inline-code">fileUrl</span> retornado no upload aponta para
+                            <span class="inline-code">/api/files/read</span>, mas essa rota exige
+                            <span class="inline-code">X-Storage-Token</span>. Portanto, esse link não deve ser tratado
+                            como URL pública direta. Para imagens públicas, crie uma rota no seu backend principal que
+                            injete o token da Storage API e faça o proxy da leitura.
+                        </div>
+                    </div>
+                </section>
+
+                <section id="urls" class="card docs-section">
+                    <div class="card-header">
+                        <div>
+                            <h2>URLs de acesso</h2>
+                            <p class="card-subtitle">Use a URL correta de acordo com o ponto de origem da chamada.</p>
+                        </div>
+                    </div>
+
+                    <table class="docs-table">
+                        <tr>
+                            <th>Dentro do Docker Compose</th>
+                            <td><span class="inline-code">http://storage-api:3999</span></td>
+                        </tr>
+                        <tr>
+                            <th>Host local</th>
+                            <td><span class="inline-code">http://127.0.0.1:3999</span></td>
+                        </tr>
+                        <tr>
+                            <th>Base URL configurável</th>
+                            <td>
+                                A URL usada em respostas pode vir de <span class="inline-code">BASE_URL</span>.
+                                No ambiente local atual, o padrão é <span
+                                    class="inline-code">http://localhost:3999</span>.
+                            </td>
+                        </tr>
+                    </table>
+                </section>
+
+                <section id="persistencia" class="card docs-section">
+                    <div class="card-header">
+                        <div>
+                            <h2>Persistência e dados</h2>
+                            <p class="card-subtitle">
+                                A Storage API usa volume Docker nomeado para evitar gravação na raiz do projeto Windows.
+                            </p>
+                        </div>
+                    </div>
+
+                    <table class="docs-table">
+                        <tr>
+                            <th>Volume Docker</th>
+                            <td><span class="inline-code">storage_api_data</span></td>
+                        </tr>
+                        <tr>
+                            <th>Root interno</th>
+                            <td><span class="inline-code">/var/lib/storage-api</span></td>
+                        </tr>
+                        <tr>
+                            <th>Arquivos das aplicações</th>
+                            <td><span class="inline-code">/var/lib/storage-api/storage/apps/{applicationId}</span></td>
+                        </tr>
+                        <tr>
+                            <th>Banco SQLite</th>
+                            <td><span class="inline-code">/var/lib/storage-api/db/store.sqlite</span></td>
+                        </tr>
+                        <tr>
+                            <th>Arquivos SQLite auxiliares</th>
+                            <td>
+                                <span class="inline-code">store.sqlite-wal</span> e
+                                <span class="inline-code">store.sqlite-shm</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Temporários de upload</th>
+                            <td><span class="inline-code">/var/lib/storage-api/tmp</span></td>
+                        </tr>
+                        <tr>
+                            <th>JSON legado</th>
+                            <td>Desativado. O store oficial é somente SQLite.</td>
+                        </tr>
+                    </table>
+
+                    <div class="callout callout-danger" style="margin-top:18px;">
+                        <strong>Comandos perigosos em produção</strong>
+                        <div class="muted-note">
+                            Não use <span class="inline-code">docker compose down -v</span>,
+                            <span class="inline-code">docker volume rm</span>,
+                            <span class="inline-code">docker volume prune</span> ou
+                            <span class="inline-code">docker system prune --volumes</span> sem backup.
+                            Esses comandos podem apagar o volume onde ficam banco e arquivos.
+                        </div>
+                    </div>
+                </section>
+
+                <section id="auth" class="card docs-section">
+                    <div class="card-header">
+                        <div>
+                            <h2>Autenticação</h2>
+                            <p class="card-subtitle">Todas as rotas de arquivos exigem token de aplicação.</p>
+                        </div>
+                    </div>
+
+                    <div class="code-block">X-Storage-Token: SEU_TOKEN_DA_APLICACAO</div>
+
+                    <p class="muted-note" style="margin-top:14px;">
+                        Sem esse header, a API retorna <span class="inline-code">401</span>. O token é gerado no painel
+                        administrativo. Guarde o token no backend principal ou em secret manager. Não coloque esse token
+                        no frontend.
+                    </p>
+                </section>
+
+                <section id="paths" class="card docs-section">
+                    <div class="card-header">
+                        <div>
+                            <h2>Regras de path</h2>
+                            <p class="card-subtitle">
+                                Os paths são relativos à aplicação autenticada. A aplicação não informa o UUID no path.
+                            </p>
+                        </div>
+                    </div>
+
+                    <table class="docs-table">
+                        <tr>
+                            <th>Permitido</th>
+                            <td>
+                                Segmentos com letras, números, ponto, hífen e underline:
+                                <span class="inline-code">a-z</span>,
+                                <span class="inline-code">A-Z</span>,
+                                <span class="inline-code">0-9</span>,
+                                <span class="inline-code">.</span>,
+                                <span class="inline-code">_</span>,
+                                <span class="inline-code">-</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Bloqueado</th>
+                            <td>
+                                <span class="inline-code">..</span>,
+                                <span class="inline-code">.</span>,
+                                path traversal, path vazio em operações obrigatórias e caracteres fora do padrão aceito.
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Exemplos válidos</th>
+                            <td>
+                                <span class="inline-code">products/images</span><br />
+                                <span class="inline-code">tenants/4/catalog/products</span><br />
+                                <span class="inline-code">branding/logo</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Exemplos inválidos</th>
+                            <td>
+                                <span class="inline-code">../secret</span><br />
+                                <span class="inline-code">products/../../x</span><br />
+                                <span class="inline-code">produto imagem</span><br />
+                                <span class="inline-code">tenants/4/logo@2x</span>
+                            </td>
+                        </tr>
+                    </table>
+                </section>
+
+                <section id="types" class="card docs-section">
+                    <div class="card-header">
+                        <div>
+                            <h2>Tipos de arquivo aceitos</h2>
+                            <p class="card-subtitle">
+                                A API valida a assinatura binária do arquivo, não apenas a extensão.
+                            </p>
+                        </div>
+                    </div>
+
+                    <table class="docs-table">
+                        <tr>
+                            <th>PNG</th>
+                            <td><span class="inline-code">image/png</span></td>
+                        </tr>
+                        <tr>
+                            <th>JPEG/JPG</th>
+                            <td><span class="inline-code">image/jpeg</span></td>
+                        </tr>
+                        <tr>
+                            <th>WEBP</th>
+                            <td><span class="inline-code">image/webp</span></td>
+                        </tr>
+                        <tr>
+                            <th>PDF</th>
+                            <td><span class="inline-code">application/pdf</span></td>
+                        </tr>
+                    </table>
+
+                    <p class="muted-note" style="margin-top:14px;">
+                        Arquivos fora desses formatos retornam erro de tipo não permitido.
+                    </p>
+                </section>
+
+                <section id="upload" class="card docs-section">
+                    <div class="card-header">
+                        <div>
+                            <h2>Como enviar um arquivo</h2>
+                            <p class="card-subtitle">
+                                O upload é feito por <span class="inline-code">multipart/form-data</span>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="endpoint-card">
+                        <div class="endpoint-head">
+                            <span class="method method-post">POST</span>
+                            <span class="endpoint-path">/api/files/upload</span>
+                        </div>
+
+                        <table class="docs-table">
+                            <tr>
+                                <th>Autenticação</th>
+                                <td>Header <span class="inline-code">X-Storage-Token</span> obrigatório.</td>
+                            </tr>
+                            <tr>
+                                <th>Content-Type</th>
+                                <td><span class="inline-code">multipart/form-data</span></td>
+                            </tr>
+                            <tr>
+                                <th>Campo obrigatório</th>
+                                <td><span class="inline-code">file</span> → arquivo enviado.</td>
+                            </tr>
+                            <tr>
+                                <th>Campo obrigatório</th>
+                                <td>
+                                    <span class="inline-code">path</span> → diretório relativo dentro da aplicação.
+                                    Ex.: <span class="inline-code">products/images</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Campo opcional</th>
+                                <td>
+                                    <span class="inline-code">filename</span> → nome final do arquivo. Se não for
+                                    enviado,
+                                    a API usa o nome original.
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Limite</th>
+                                <td>
+                                    Padrão atual de 10 MB. Configurável por
+                                    <span class="inline-code">MAX_UPLOAD_SIZE</span>.
+                                </td>
+                            </tr>
+                        </table>
+
+                        <div style="margin-top:16px;">
+                            <strong style="display:block; margin-bottom:10px;">Exemplo de resposta</strong>
+                            <pre class="code-block">{
+  "success": true,
+  "applicationId": "83d30cf4-3e30-4ed6-ae31-21d3f6cb02e4",
+  "relativePath": "products/images/product-01.png",
+  "sizeBytes": 58231,
+  "mimeType": "image/png",
+  "fileUrl": "http://localhost:3999/api/files/read?path=products%2Fimages%2Fproduct-01.png"
+}</pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="list" class="card docs-section">
+                    <div class="card-header">
+                        <div>
+                            <h2>Como listar arquivos</h2>
+                            <p class="card-subtitle">Lista arquivos e diretórios de um caminho específico.</p>
+                        </div>
+                    </div>
+
+                    <div class="endpoint-card">
+                        <div class="endpoint-head">
+                            <span class="method method-get">GET</span>
+                            <span class="endpoint-path">/api/files?path=products/images</span>
+                        </div>
+
+                        <table class="docs-table">
+                            <tr>
+                                <th>Autenticação</th>
+                                <td>Header <span class="inline-code">X-Storage-Token</span> obrigatório.</td>
+                            </tr>
+                            <tr>
+                                <th>Query obrigatória</th>
+                                <td><span class="inline-code">path</span> → diretório relativo para listar.</td>
+                            </tr>
+                            <tr>
+                                <th>Retorno</th>
+                                <td>Array de itens. Diretórios terminam com <span class="inline-code">/</span>.</td>
+                            </tr>
+                        </table>
+
+                        <div style="margin-top:16px;">
+                            <strong style="display:block; margin-bottom:10px;">Exemplo de resposta</strong>
+                            <pre class="code-block">{
+  "success": true,
+  "items": [
+    "category-a/",
+    "banner-home.png",
+    "product-01.jpg"
+  ]
+}</pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="read" class="card docs-section">
+                    <div class="card-header">
+                        <div>
+                            <h2>Como ler um arquivo</h2>
+                            <p class="card-subtitle">A API faz streaming do arquivo solicitado.</p>
+                        </div>
+                    </div>
+
+                    <div class="endpoint-card">
+                        <div class="endpoint-head">
+                            <span class="method method-get">GET</span>
+                            <span class="endpoint-path">/api/files/read?path=products/images/product-01.png</span>
+                        </div>
+
+                        <table class="docs-table">
+                            <tr>
+                                <th>Autenticação</th>
+                                <td>Header <span class="inline-code">X-Storage-Token</span> obrigatório.</td>
+                            </tr>
+                            <tr>
+                                <th>Query obrigatória</th>
+                                <td><span class="inline-code">path</span> → arquivo relativo dentro da aplicação.</td>
+                            </tr>
+                            <tr>
+                                <th>Resposta</th>
+                                <td>
+                                    Conteúdo binário do arquivo com
+                                    <span class="inline-code">Content-Type</span>,
+                                    <span class="inline-code">Content-Length</span> e
+                                    <span class="inline-code">Content-Disposition</span>.
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Uso recomendado</th>
+                                <td>
+                                    Seu backend principal consome essa rota e devolve o binário ao frontend sem expor o
+                                    token.
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="delete" class="card docs-section">
+                    <div class="card-header">
+                        <div>
+                            <h2>Como remover um arquivo</h2>
+                            <p class="card-subtitle">Remove o arquivo informado no path da aplicação autenticada.</p>
+                        </div>
+                    </div>
+
+                    <div class="endpoint-card">
+                        <div class="endpoint-head">
+                            <span class="method method-delete">DELETE</span>
+                            <span class="endpoint-path">/api/files?path=products/images/product-01.png</span>
+                        </div>
+
+                        <table class="docs-table">
+                            <tr>
+                                <th>Autenticação</th>
+                                <td>Header <span class="inline-code">X-Storage-Token</span> obrigatório.</td>
+                            </tr>
+                            <tr>
+                                <th>Query obrigatória</th>
+                                <td><span class="inline-code">path</span> → caminho relativo do arquivo.</td>
+                            </tr>
+                            <tr>
+                                <th>Resposta</th>
+                                <td>JSON simples confirmando a remoção.</td>
+                            </tr>
+                            <tr>
+                                <th>Diretórios</th>
+                                <td>
+                                    A API de aplicação não foi feita para exclusão recursiva de diretórios. Exclusão
+                                    administrativa de diretórios deve ser feita pelo painel admin.
+                                </td>
+                            </tr>
+                        </table>
+
+                        <div style="margin-top:16px;">
+                            <strong style="display:block; margin-bottom:10px;">Exemplo de resposta</strong>
+                            <pre class="code-block">{
+  "success": true,
+  "message": "Arquivo removido."
+}</pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="admin" class="card docs-section">
+                    <div class="card-header">
+                        <div>
+                            <h2>Área administrativa</h2>
+                            <p class="card-subtitle">
+                                Recursos internos para gerenciar aplicações, tokens, arquivos, diagnóstico e histórico.
+                            </p>
+                        </div>
+                    </div>
+
+                    <table class="docs-table">
+                        <tr>
+                            <th>Login</th>
+                            <td><span class="inline-code">/admin</span></td>
+                        </tr>
+                        <tr>
+                            <th>Dashboard</th>
+                            <td><span class="inline-code">/admin/dashboard</span></td>
+                        </tr>
+                        <tr>
+                            <th>Aplicações</th>
+                            <td><span class="inline-code">/admin/applications-ui</span></td>
+                        </tr>
+                        <tr>
+                            <th>Histórico</th>
+                            <td><span class="inline-code">/admin/history-ui</span></td>
+                        </tr>
+                        <tr>
+                            <th>Gerenciador de arquivos</th>
+                            <td><span class="inline-code">/admin/storage</span></td>
+                        </tr>
+                        <tr>
+                            <th>Diagnóstico visual</th>
+                            <td><span class="inline-code">/admin/diagnostics-ui</span></td>
+                        </tr>
+                        <tr>
+                            <th>Diagnóstico JSON</th>
+                            <td><span class="inline-code">/admin/diagnostics</span></td>
+                        </tr>
+                    </table>
+
+                    <div class="callout" style="margin-top:18px;">
+                        <strong>Exclusão administrativa</strong>
+                        <div class="muted-note">
+                            Pelo painel admin é possível excluir arquivos, diretórios vazios e diretórios com conteúdo
+                            mediante confirmação recursiva. A raiz do storage não pode ser removida.
+                            Exclusões administrativas são registradas no histórico como
+                            <span class="inline-code">ADMIN_DELETE</span>.
+                        </div>
+                    </div>
+                </section>
+
+                <section id="errors" class="card docs-section">
+                    <div class="card-header">
+                        <div>
+                            <h2>Respostas de erro comuns</h2>
+                            <p class="card-subtitle">Use esta tabela para tratar erros no backend integrador.</p>
+                        </div>
+                    </div>
+
+                    <table class="docs-table">
+                        <tr>
+                            <th>400</th>
+                            <td>
+                                Campo obrigatório ausente, path inválido, tipo de arquivo não permitido ou caminho que
+                                não corresponde ao tipo esperado.
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>401</th>
+                            <td>
+                                Header <span class="inline-code">X-Storage-Token</span> ausente, token inválido ou
+                                sessão
+                                administrativa expirada.
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>404</th>
+                            <td>Arquivo ou diretório não encontrado.</td>
+                        </tr>
+                        <tr>
+                            <th>409</th>
+                            <td>
+                                Diretório não vazio em exclusão administrativa sem confirmação recursiva.
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>413 ou 400</th>
+                            <td>
+                                Arquivo excede o limite máximo permitido. O middleware de upload retorna mensagem
+                                específica para limite de tamanho.
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>500</th>
+                            <td>Erro interno inesperado. Deve ser investigado nos logs do container.</td>
+                        </tr>
+                    </table>
+
+                    <div style="margin-top:16px;">
+                        <strong style="display:block; margin-bottom:10px;">Formato típico de erro</strong>
+                        <pre class="code-block">{
+  "success": false,
+  "message": "Header X-Storage-Token é obrigatório."
+}</pre>
+                    </div>
+                </section>
+
+                <section class="card docs-section">
+                    <div class="card-header">
+                        <div>
+                            <h2>Regras importantes</h2>
+                            <p class="card-subtitle">Esses pontos evitam erro de integração e problemas de segurança.
+                            </p>
+                        </div>
+                    </div>
+
+                    <ul class="docs-list">
+                        <li>O campo do arquivo deve se chamar exatamente <span class="inline-code">file</span>.</li>
+                        <li>O campo <span class="inline-code">path</span> é obrigatório no upload, listagem, leitura e
+                            exclusão.</li>
+                        <li>O campo <span class="inline-code">filename</span> é opcional no upload.</li>
+                        <li>O header <span class="inline-code">X-Storage-Token</span> é obrigatório em upload, leitura,
+                            listagem e exclusão.</li>
+                        <li>O limite padrão atual é de 10 MB por arquivo, configurável por <span
+                                class="inline-code">MAX_UPLOAD_SIZE</span>.</li>
+                        <li>Somente PNG, JPEG, WEBP e PDF são aceitos.</li>
+                        <li>Não use token diretamente no frontend em produção.</li>
+                        <li>Não armazene paths absolutos da máquina ou do container no banco da aplicação principal.
+                        </li>
+                        <li>Armazene preferencialmente o <span class="inline-code">relativePath</span> retornado no
+                            upload.</li>
+                        <li>Para leitura pública de imagens, use uma rota do backend principal como proxy.</li>
+                    </ul>
+                </section>
+
+                <section id="examples" class="card docs-section">
+                    <div class="card-header">
+                        <div>
+                            <h2>Modelos de código por linguagem</h2>
+                            <p class="card-subtitle">
+                                Exemplos práticos para enviar arquivo para a API. Use estes exemplos no backend ou em
+                                scripts internos.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="callout callout-warning">
+                        <strong>Não exponha token no navegador</strong>
+                        <div class="muted-note">
+                            Os exemplos com token devem rodar em backend, worker, script interno ou serviço confiável.
+                            O exemplo JavaScript no navegador é apenas para teste local controlado, nunca para produção.
+                        </div>
+                    </div>
+
+                    <div class="language-nav" style="margin-top:18px;">
+                        <a class="language-link" href="#example-ts">TS</a>
+                        <a class="language-link" href="#example-node">NODE</a>
+                        <a class="language-link" href="#example-backend-proxy">PROXY</a>
+                        <a class="language-link" href="#example-java">JAVA</a>
+                        <a class="language-link" href="#example-js">JS TESTE</a>
+                        <a class="language-link" href="#example-php">PHP</a>
+                        <a class="language-link" href="#example-go">GO</a>
+                    </div>
+
+                    <section id="example-ts" style="margin-top:24px;">
+                        <h3 class="card-title">TypeScript no backend</h3>
+                        <pre class="code-block">import fs from 'fs';
+import FormData from 'form-data';
+import axios from 'axios';
+
+const STORAGE_BASE_URL = 'http://storage-api:3999';
+const STORAGE_TOKEN = process.env.STORAGE_TOKEN;
+
+async function uploadImage() {
+  if (!STORAGE_TOKEN) {
+    throw new Error('STORAGE_TOKEN não configurado.');
+  }
+
+  const form = new FormData();
+  form.append('path', 'products/images');
+  form.append('filename', 'product-01.png');
+  form.append('file', fs.createReadStream('./product-01.png'));
+
+  const response = await axios.post(`${STORAGE_BASE_URL}/api/files/upload`, form, {
+    headers: {
+      ...form.getHeaders(),
+      'X-Storage-Token': STORAGE_TOKEN
+    },
+    maxBodyLength: Infinity
+  });
+
+  console.log(response.data);
+}
+
+uploadImage().catch(console.error);</pre>
+                    </section>
+
+                    <section id="example-node" style="margin-top:24px;">
+                        <h3 class="card-title">Node.js CommonJS no backend</h3>
+                        <pre class="code-block">const fs = require('fs');
+const FormData = require('form-data');
+const axios = require('axios');
+
+const STORAGE_BASE_URL = 'http://storage-api:3999';
+const STORAGE_TOKEN = process.env.STORAGE_TOKEN;
+
+async function uploadImage() {
+  if (!STORAGE_TOKEN) {
+    throw new Error('STORAGE_TOKEN não configurado.');
+  }
+
+  const form = new FormData();
+  form.append('path', 'products/images');
+  form.append('filename', 'product-01.png');
+  form.append('file', fs.createReadStream('./product-01.png'));
+
+  const response = await axios.post(`${STORAGE_BASE_URL}/api/files/upload`, form, {
+    headers: {
+      ...form.getHeaders(),
+      'X-Storage-Token': STORAGE_TOKEN
+    },
+    maxBodyLength: Infinity
+  });
+
+  console.log(response.data);
+}
+
+uploadImage().catch(console.error);</pre>
+                    </section>
+
+                    <section id="example-backend-proxy" style="margin-top:24px;">
+                        <h3 class="card-title">Exemplo de proxy de leitura no backend</h3>
+                        <pre class="code-block">import express from 'express';
+import axios from 'axios';
+
+const app = express();
+
+const STORAGE_BASE_URL = 'http://storage-api:3999';
+const STORAGE_TOKEN = process.env.STORAGE_TOKEN;
+
+app.get('/media/read', async (req, res, next) => {
+  try {
+    if (!STORAGE_TOKEN) {
+      throw new Error('STORAGE_TOKEN não configurado.');
+    }
+
+    const relativePath = String(req.query.path || '');
+
+    const response = await axios.get(`${STORAGE_BASE_URL}/api/files/read`, {
+      params: { path: relativePath },
+      headers: {
+        'X-Storage-Token': STORAGE_TOKEN
+      },
+      responseType: 'stream'
+    });
+
+    res.setHeader('Content-Type', response.headers['content-type'] || 'application/octet-stream');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+
+    response.data.pipe(res);
+  } catch (error) {
+    next(error);
+  }
+});</pre>
+                    </section>
+
+                    <section id="example-java" style="margin-top:24px;">
+                        <h3 class="card-title">Java</h3>
+                        <pre class="code-block">import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.UUID;
+
+public class StorageUploadExample {
+    public static void main(String[] args) throws IOException, InterruptedException {
+        String token = System.getenv("STORAGE_TOKEN");
+        if (token == null || token.isBlank()) {
+            throw new IllegalStateException("STORAGE_TOKEN não configurado.");
+        }
+
+        String boundary = "----StorageBoundary" + UUID.randomUUID();
+        Path filePath = Path.of("product-01.png");
+        byte[] fileBytes = Files.readAllBytes(filePath);
+
+        String bodyStart =
+            "--" + boundary + "\\r\\n" +
+            "Content-Disposition: form-data; name=\\"path\\"\\r\\n\\r\\n" +
+            "products/images\\r\\n" +
+            "--" + boundary + "\\r\\n" +
+            "Content-Disposition: form-data; name=\\"filename\\"\\r\\n\\r\\n" +
+            "product-01.png\\r\\n" +
+            "--" + boundary + "\\r\\n" +
+            "Content-Disposition: form-data; name=\\"file\\"; filename=\\"product-01.png\\"\\r\\n" +
+            "Content-Type: image/png\\r\\n\\r\\n";
+
+        String bodyEnd = "\\r\\n--" + boundary + "--\\r\\n";
+
+        byte[] startBytes = bodyStart.getBytes();
+        byte[] endBytes = bodyEnd.getBytes();
+
+        byte[] requestBody = new byte[startBytes.length + fileBytes.length + endBytes.length];
+        System.arraycopy(startBytes, 0, requestBody, 0, startBytes.length);
+        System.arraycopy(fileBytes, 0, requestBody, startBytes.length, fileBytes.length);
+        System.arraycopy(endBytes, 0, requestBody, startBytes.length + fileBytes.length, endBytes.length);
+
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("http://storage-api:3999/api/files/upload"))
+            .header("X-Storage-Token", token)
+            .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+            .POST(HttpRequest.BodyPublishers.ofByteArray(requestBody))
+            .build();
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        System.out.println(response.body());
+    }
+}</pre>
+                    </section>
+
+                    <section id="example-js" style="margin-top:24px;">
+                        <h3 class="card-title">JavaScript no navegador somente para teste local controlado</h3>
+                        <pre class="code-block">// Não use este exemplo em produção.
+// Ele expõe o X-Storage-Token no navegador.
+
+async function uploadImageForLocalTestOnly(file) {
+  const form = new FormData();
+  form.append('path', 'products/images');
+  form.append('filename', file.name);
+  form.append('file', file);
+
+  const response = await fetch('http://127.0.0.1:3999/api/files/upload', {
+    method: 'POST',
+    headers: {
+      'X-Storage-Token': 'SEU_TOKEN_APENAS_PARA_TESTE_LOCAL'
+    },
+    body: form
+  });
+
+  const data = await response.json();
+  console.log(data);
+}</pre>
+                    </section>
+
+                    <section id="example-php" style="margin-top:24px;">
+                        <h3 class="card-title">PHP</h3>
+                        <pre class="code-block">&lt;?php
+
+$token = getenv('STORAGE_TOKEN');
+
+if (!$token) {
+    throw new Exception('STORAGE_TOKEN não configurado.');
+}
+
+$ch = curl_init();
+
+$data = [
+    'path' => 'products/images',
+    'filename' => 'product-01.png',
+    'file' => new CURLFile(__DIR__ . '/product-01.png')
+];
+
+curl_setopt_array($ch, [
+    CURLOPT_URL => 'http://storage-api:3999/api/files/upload',
+    CURLOPT_POST => true,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'X-Storage-Token: ' . $token
+    ],
+    CURLOPT_POSTFIELDS => $data,
+]);
+
+$response = curl_exec($ch);
+
+if ($response === false) {
+    throw new Exception(curl_error($ch));
+}
+
+curl_close($ch);
+
+echo $response;</pre>
+                    </section>
+
+                    <section id="example-go" style="margin-top:24px;">
+                        <h3 class="card-title">Go</h3>
+                        <pre class="code-block">package main
+
+import (
+	"bytes"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"os"
+)
+
+func main() {
+	token := os.Getenv("STORAGE_TOKEN")
+	if token == "" {
+		panic("STORAGE_TOKEN não configurado")
+	}
+
+	var requestBody bytes.Buffer
+	writer := multipart.NewWriter(&requestBody)
+
+	_ = writer.WriteField("path", "products/images")
+	_ = writer.WriteField("filename", "product-01.png")
+
+	fileWriter, err := writer.CreateFormFile("file", "product-01.png")
+	if err != nil {
+		panic(err)
+	}
+
+	file, err := os.Open("./product-01.png")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	_, err = io.Copy(fileWriter, file)
+	if err != nil {
+		panic(err)
+	}
+
+	writer.Close()
+
+	req, err := http.NewRequest("POST", "http://storage-api:3999/api/files/upload", &requestBody)
+	if err != nil {
+		panic(err)
+	}
+
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("X-Storage-Token", token)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	fmt.Println(string(body))
+}</pre>
+                    </section>
+                </section>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>

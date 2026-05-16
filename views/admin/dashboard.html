@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Storage Admin | Dashboard</title>
+    <link rel="stylesheet" href="/public/admin.css" />
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="small">Storage API</div>
+                <div class="title">Admin Console</div>
+                <div class="desc">Painel central para gerenciamento de aplicações, histórico e arquivos.</div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a class="sidebar-link" data-nav="dashboard" href="/admin/dashboard">Dashboard</a>
+                <a class="sidebar-link" data-nav="applications" href="/admin/applications-ui">Aplicações</a>
+                <a class="sidebar-link" data-nav="history" href="/admin/history-ui">Histórico</a>
+                <a class="sidebar-link" data-nav="storage" href="/admin/storage">Arquivos</a>
+                <a class="sidebar-link" data-nav="diagnostics" href="/admin/diagnostics-ui">Diagnóstico</a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn btn-secondary btn-block" data-action="logout">Sair</button>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="main-inner">
+                <div class="topbar">
+                    <div>
+                        <h1>Dashboard</h1>
+                        <p>Visão geral do ambiente administrativo da API de storage.</p>
+                    </div>
+                    <div class="topbar-actions">
+                        <a class="btn btn-primary" href="/admin/applications-ui">Gerenciar aplicações</a>
+                        <a class="btn btn-secondary" href="/admin/storage">Abrir arquivos</a>
+                    </div>
+                </div>
+
+                <div class="grid grid-3">
+                    <div class="card kpi">
+                        <div class="kpi-label">Aplicações</div>
+                        <div class="kpi-value" id="kpiApplications">-</div>
+                        <div class="kpi-note">Total de aplicações cadastradas</div>
+                    </div>
+
+                    <div class="card kpi">
+                        <div class="kpi-label">Aplicações ativas</div>
+                        <div class="kpi-value" id="kpiActiveApplications">-</div>
+                        <div class="kpi-note">Integrações com acesso habilitado</div>
+                    </div>
+
+                    <div class="card kpi">
+                        <div class="kpi-label">Eventos recentes</div>
+                        <div class="kpi-value" id="kpiHistory">-</div>
+                        <div class="kpi-note">Itens carregados na listagem atual do histórico</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-2" style="margin-top: 20px;">
+                    <section class="card">
+                        <div class="card-header">
+                            <div>
+                                <h2 class="card-title">Ações rápidas</h2>
+                                <p class="card-subtitle">Acesse rapidamente as áreas principais do painel.</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-2">
+                            <a class="card" href="/admin/applications-ui">
+                                <h3 class="card-title" style="font-size:18px;">Aplicações e tokens</h3>
+                                <p class="card-subtitle">Criar aplicações, listar, rotacionar tokens e ativar/desativar
+                                    acessos.</p>
+                            </a>
+
+                            <a class="card" href="/admin/history-ui">
+                                <h3 class="card-title" style="font-size:18px;">Histórico de operações</h3>
+                                <p class="card-subtitle">Auditoria com filtros por aplicação, ação, status e paginação.
+                                </p>
+                            </a>
+
+                            <a class="card" href="/admin/storage">
+                                <h3 class="card-title" style="font-size:18px;">Gerenciador de arquivos</h3>
+                                <p class="card-subtitle">Navegue entre diretórios, visualize imagens e remova arquivos.
+                                </p>
+                            </a>
+
+                            <div class="card">
+                                <h3 class="card-title" style="font-size:18px;">Segurança operacional</h3>
+                                <p class="card-subtitle">Use rotação de token e desative aplicações quando necessário.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="card">
+                        <div class="card-header">
+                            <div>
+                                <h2 class="card-title">Últimos eventos</h2>
+                                <p class="card-subtitle">Resumo inicial do histórico recente.</p>
+                            </div>
+                            <a class="btn btn-secondary" href="/admin/history-ui">Ver histórico completo</a>
+                        </div>
+
+                        <div class="table-wrap">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Ação</th>
+                                        <th>Aplicação</th>
+                                        <th>Status</th>
+                                        <th>Data</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyPreview"></tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/public/admin.js"></script>
+    <script>
+        async function loadDashboard() {
+            const [applicationsData, historyData] = await Promise.all([
+                api('/admin/applications'),
+                api('/admin/history?limit=5&page=1')
+            ]);
+
+            const applications = applicationsData.applications || [];
+            const history = historyData.history || [];
+
+            document.getElementById('kpiApplications').textContent = applications.length;
+            document.getElementById('kpiActiveApplications').textContent = applications.filter(item => item.isActive).length;
+            document.getElementById('kpiHistory').textContent = history.length;
+
+            const tbody = document.getElementById('historyPreview');
+
+            if (!history.length) {
+                tbody.innerHTML = `
+          <tr>
+            <td colspan="4">
+              <div class="empty-state">Nenhum evento encontrado.</div>
+            </td>
+          </tr>
+        `;
+                return;
+            }
+
+            tbody.innerHTML = history.map(item => `
+        <tr>
+          <td>${escapeHtml(item.action)}</td>
+          <td>${escapeHtml(item.applicationName || '-')}</td>
+          <td>
+            <span class="badge ${item.status === 'SUCCESS' ? 'badge-success' : 'badge-danger'}">
+              ${escapeHtml(item.status)}
+            </span>
+          </td>
+          <td>${formatDate(item.createdAt)}</td>
+        </tr>
+      `).join('');
+        }
+
+        loadDashboard().catch(() => {
+            document.getElementById('historyPreview').innerHTML = `
+        <tr>
+          <td colspan="4">
+            <div class="empty-state">Não foi possível carregar o dashboard.</div>
+          </td>
+        </tr>
+      `;
+        });
+    </script>
+</body>
+
+</html>

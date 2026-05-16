@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Storage Admin | Histórico</title>
+    <link rel="stylesheet" href="/public/admin.css" />
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="small">Storage API</div>
+                <div class="title">Admin Console</div>
+                <div class="desc">Auditoria e rastreabilidade das operações executadas.</div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a class="sidebar-link" data-nav="dashboard" href="/admin/dashboard">Dashboard</a>
+                <a class="sidebar-link" data-nav="applications" href="/admin/applications-ui">Aplicações</a>
+                <a class="sidebar-link" data-nav="history" href="/admin/history-ui">Histórico</a>
+                <a class="sidebar-link" data-nav="storage" href="/admin/storage">Arquivos</a>
+                <a class="sidebar-link" data-nav="diagnostics" href="/admin/diagnostics-ui">Diagnóstico</a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn btn-secondary btn-block" data-action="logout">Sair</button>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="main-inner">
+                <div class="topbar">
+                    <div>
+                        <h1>Histórico</h1>
+                        <p>Consulte eventos por aplicação, ação, status e paginação.</p>
+                    </div>
+                    <div class="topbar-actions">
+                        <button class="btn btn-secondary" id="filterBtn">Aplicar filtros</button>
+                    </div>
+                </div>
+
+                <section class="card">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Filtros</h2>
+                            <p class="card-subtitle">Refine a consulta do histórico operacional.</p>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="col-4">
+                            <label for="applicationId" style="display:block;">
+                                <span
+                                    style="display:block; margin-bottom:8px; font-size:14px; font-weight:700;">Aplicação</span>
+                                <select class="select" id="applicationId">
+                                    <option value="">Todas</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <div class="col-2">
+                            <label for="action" style="display:block;">
+                                <span
+                                    style="display:block; margin-bottom:8px; font-size:14px; font-weight:700;">Ação</span>
+                                <select class="select" id="action">
+                                    <option value="">Todas</option>
+                                    <option value="UPLOAD">UPLOAD</option>
+                                    <option value="READ">READ</option>
+                                    <option value="LIST">LIST</option>
+                                    <option value="DELETE">DELETE</option>
+                                    <option value="ADMIN_DELETE">ADMIN_DELETE</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <div class="col-2">
+                            <label for="status" style="display:block;">
+                                <span
+                                    style="display:block; margin-bottom:8px; font-size:14px; font-weight:700;">Status</span>
+                                <select class="select" id="status">
+                                    <option value="">Todos</option>
+                                    <option value="SUCCESS">SUCCESS</option>
+                                    <option value="ERROR">ERROR</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <div class="col-2">
+                            <label for="limit" style="display:block;">
+                                <span
+                                    style="display:block; margin-bottom:8px; font-size:14px; font-weight:700;">Limite</span>
+                                <select class="select" id="limit">
+                                    <option value="10">10</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <div class="col-2">
+                            <label for="page" style="display:block;">
+                                <span
+                                    style="display:block; margin-bottom:8px; font-size:14px; font-weight:700;">Página</span>
+                                <input class="input" id="page" type="number" min="1" value="1" />
+                            </label>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card" style="margin-top:20px;">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Eventos</h2>
+                            <p class="card-subtitle">Resultado da consulta atual.</p>
+                        </div>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Aplicação</th>
+                                    <th>Ação</th>
+                                    <th>Status</th>
+                                    <th>Path</th>
+                                    <th>Arquivo</th>
+                                    <th>IP</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTable"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagination">
+                        <div class="pagination-info" id="paginationInfo">-</div>
+                        <div class="table-actions">
+                            <button class="btn btn-secondary" id="prevPageBtn">Página anterior</button>
+                            <button class="btn btn-secondary" id="nextPageBtn">Próxima página</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="/public/admin.js"></script>
+    <script>
+        let currentPage = 1;
+        let totalPages = 1;
+
+        async function loadApplicationsFilter() {
+            const data = await api('/admin/applications');
+            const select = document.getElementById('applicationId');
+            const options = ['<option value="">Todas</option>'];
+
+            (data.applications || []).forEach(app => {
+                options.push(`<option value="${escapeHtml(app.id)}">${escapeHtml(app.name)}</option>`);
+            });
+
+            select.innerHTML = options.join('');
+        }
+
+        async function loadHistory() {
+            currentPage = Number(document.getElementById('page').value || 1);
+
+            const params = new URLSearchParams({
+                page: String(currentPage),
+                limit: document.getElementById('limit').value
+            });
+
+            const applicationId = document.getElementById('applicationId').value;
+            const action = document.getElementById('action').value;
+            const status = document.getElementById('status').value;
+
+            if (applicationId) params.set('applicationId', applicationId);
+            if (action) params.set('action', action);
+            if (status) params.set('status', status);
+
+            const data = await api(`/admin/history?${params.toString()}`);
+            const history = data.history || [];
+            totalPages = Number(data.pages || 1);
+
+            const tbody = document.getElementById('historyTable');
+
+            if (!history.length) {
+                tbody.innerHTML = `
+          <tr>
+            <td colspan="7">
+              <div class="empty-state">Nenhum evento encontrado para os filtros informados.</div>
+            </td>
+          </tr>
+        `;
+            } else {
+                tbody.innerHTML = history.map(item => `
+          <tr>
+            <td>${formatDate(item.createdAt)}</td>
+            <td>${escapeHtml(item.applicationName || '-')}</td>
+            <td><span class="badge badge-info">${escapeHtml(item.action)}</span></td>
+            <td>
+              <span class="badge ${item.status === 'SUCCESS' ? 'badge-success' : 'badge-danger'}">
+                ${escapeHtml(item.status)}
+              </span>
+            </td>
+            <td>${escapeHtml(item.relativePath || '-')}</td>
+            <td>${escapeHtml(item.filename || '-')}</td>
+            <td>${escapeHtml(item.requestIp || '-')}</td>
+          </tr>
+        `).join('');
+            }
+
+            document.getElementById('paginationInfo').textContent =
+                `Página ${data.page || 1} de ${data.pages || 1} • Total: ${data.total || history.length}`;
+        }
+
+        document.getElementById('filterBtn').addEventListener('click', async () => {
+            document.getElementById('page').value = '1';
+            await loadHistory();
+        });
+
+        document.getElementById('prevPageBtn').addEventListener('click', async () => {
+            const current = Number(document.getElementById('page').value || 1);
+            if (current <= 1) return;
+            document.getElementById('page').value = String(current - 1);
+            await loadHistory();
+        });
+
+        document.getElementById('nextPageBtn').addEventListener('click', async () => {
+            const current = Number(document.getElementById('page').value || 1);
+            if (current >= totalPages) return;
+            document.getElementById('page').value = String(current + 1);
+            await loadHistory();
+        });
+
+        Promise.all([loadApplicationsFilter(), loadHistory()]).catch(() => {
+            document.getElementById('historyTable').innerHTML = `
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">Não foi possível carregar o histórico.</div>
+          </td>
+        </tr>
+      `;
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Storage Admin | Aplicações</title>
+    <link rel="stylesheet" href="/public/admin.css" />
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="small">Storage API</div>
+                <div class="title">Admin Console</div>
+                <div class="desc">Gerencie aplicações, tokens e o ciclo de vida dos acessos.</div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a class="sidebar-link" data-nav="dashboard" href="/admin/dashboard">Dashboard</a>
+                <a class="sidebar-link" data-nav="applications" href="/admin/applications-ui">Aplicações</a>
+                <a class="sidebar-link" data-nav="history" href="/admin/history-ui">Histórico</a>
+                <a class="sidebar-link" data-nav="storage" href="/admin/storage">Arquivos</a>
+                <a class="sidebar-link" data-nav="diagnostics" href="/admin/diagnostics-ui">Diagnóstico</a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn btn-secondary btn-block" data-action="logout">Sair</button>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="main-inner">
+                <div class="topbar">
+                    <div>
+                        <h1>Aplicações</h1>
+                        <p>Crie integrações, rotacione tokens e ative/desative acessos.</p>
+                    </div>
+                    <div class="topbar-actions">
+                        <button class="btn btn-secondary" id="reloadBtn">Atualizar</button>
+                    </div>
+                </div>
+
+                <section class="card">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Nova aplicação</h2>
+                            <p class="card-subtitle">Cadastre uma nova aplicação para gerar um token de acesso.</p>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="col-8">
+                            <label for="appName" class="form-group" style="display:block;">
+                                <span style="display:block; margin-bottom:8px; font-size:14px; font-weight:700;">Nome da
+                                    aplicação</span>
+                                <input class="input" id="appName"
+                                    placeholder="Ex.: ERP Central, Gateway de Mídia, Site Institucional" />
+                            </label>
+                        </div>
+                        <div class="col-4" style="display:flex; align-items:center;">
+                            <button class="btn btn-primary btn-block" id="createAppBtn">Criar aplicação</button>
+                        </div>
+                    </div>
+
+                    <div id="createAlert" class="alert"></div>
+
+                    <div id="tokenResultWrap" class="hidden" style="margin-top:18px;">
+                        <div class="card" style="background:#f8fbff; border-style:dashed;">
+                            <h3 class="card-title" style="font-size:18px;">Token gerado</h3>
+                            <p class="card-subtitle">Salve este token com segurança. Ele pode não ser exibido novamente.
+                            </p>
+                            <pre class="code-block" id="tokenResult"></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card" style="margin-top:20px;">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Aplicações cadastradas</h2>
+                            <p class="card-subtitle">Lista de integrações com ações operacionais.</p>
+                        </div>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>ID</th>
+                                    <th>Status</th>
+                                    <th>Criada em</th>
+                                    <th>Atualizada em</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="applicationsTable"></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="/public/admin.js"></script>
+    <script>
+        async function loadApplications() {
+            const data = await api('/admin/applications');
+            const applications = data.applications || [];
+            const tbody = document.getElementById('applicationsTable');
+
+            if (!applications.length) {
+                tbody.innerHTML = `
+          <tr>
+            <td colspan="6">
+              <div class="empty-state">Nenhuma aplicação cadastrada.</div>
+            </td>
+          </tr>
+        `;
+                return;
+            }
+
+            tbody.innerHTML = applications.map(app => `
+        <tr>
+          <td><strong>${escapeHtml(app.name)}</strong></td>
+          <td><span class="inline-code">${escapeHtml(app.id)}</span></td>
+          <td>
+            <span class="badge ${app.isActive ? 'badge-success' : 'badge-danger'}">
+              ${app.isActive ? 'ATIVA' : 'INATIVA'}
+            </span>
+          </td>
+          <td>${formatDate(app.createdAt)}</td>
+          <td>${formatDate(app.updatedAt)}</td>
+          <td>
+            <div class="table-actions">
+             <a class="btn btn-secondary" href="/admin/storage?applicationId=${encodeURIComponent(app.id)}">Abrir arquivos</a>
+<button class="btn btn-secondary" onclick="rotateToken('${app.id}')">Rotacionar token</button>
+<button class="btn ${app.isActive ? 'btn-danger' : 'btn-success'}" onclick="toggleApplication('${app.id}', ${app.isActive ? 'false' : 'true'})">
+  ${app.isActive ? 'Desativar' : 'Ativar'}
+</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+        }
+
+        async function createApplication() {
+            clearAlert('createAlert');
+            document.getElementById('tokenResultWrap').classList.add('hidden');
+
+            const name = document.getElementById('appName').value.trim();
+
+            if (!name) {
+                showAlert('createAlert', 'error', 'Informe o nome da aplicação.');
+                return;
+            }
+
+            try {
+                const data = await api('/admin/applications', {
+                    method: 'POST',
+                    body: JSON.stringify({ name })
+                });
+
+                document.getElementById('tokenResultWrap').classList.remove('hidden');
+                document.getElementById('tokenResult').textContent = JSON.stringify(data, null, 2);
+                document.getElementById('appName').value = '';
+
+                showAlert('createAlert', 'success', 'Aplicação criada com sucesso.');
+                await loadApplications();
+            } catch (error) {
+                showAlert('createAlert', 'error', error.message);
+            }
+        }
+
+        async function rotateToken(id) {
+            try {
+                const data = await api(`/admin/applications/${id}/rotate-token`, { method: 'POST' });
+                document.getElementById('tokenResultWrap').classList.remove('hidden');
+                document.getElementById('tokenResult').textContent = JSON.stringify(data, null, 2);
+                showAlert('createAlert', 'success', 'Token rotacionado com sucesso.');
+                await loadApplications();
+            } catch (error) {
+                showAlert('createAlert', 'error', error.message);
+            }
+        }
+
+        async function toggleApplication(id, active) {
+            try {
+                await api(`/admin/applications/${id}/active`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ active })
+                });
+
+                showAlert('createAlert', 'success', `Aplicação ${active ? 'ativada' : 'desativada'} com sucesso.`);
+                await loadApplications();
+            } catch (error) {
+                showAlert('createAlert', 'error', error.message);
+            }
+        }
+
+        document.getElementById('createAppBtn').addEventListener('click', createApplication);
+        document.getElementById('reloadBtn').addEventListener('click', loadApplications);
+
+        loadApplications().catch(() => {
+            document.getElementById('applicationsTable').innerHTML = `
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">Não foi possível carregar as aplicações.</div>
+          </td>
+        </tr>
+      `;
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,24 @@
+services:
+  storage-api:
+    image: storage-api:latest
+    build: .
+    container_name: storage_api
+    ports:
+      - "3999:3999"
+    env_file:
+      - .env
+    environment:
+      STORAGE_ROOT_DIR: /var/lib/storage-api
+      STORAGE_DIR: /var/lib/storage-api/storage
+      APPS_STORAGE_DIR: /var/lib/storage-api/storage/apps
+      DATA_DIR: /var/lib/storage-api/data
+      DB_DIR: /var/lib/storage-api/db
+      TMP_DIR: /var/lib/storage-api/tmp
+    volumes:
+      - storage_api_data:/var/lib/storage-api
+    restart: unless-stopped
+
+volumes:
+  storage_api_data:
+    external: true
+    name: storage_api_data

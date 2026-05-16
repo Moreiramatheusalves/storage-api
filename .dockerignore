@@ -1,0 +1,15 @@
+node_modules
+dist
+.env
+storage
+data
+tmp
+db
+.git
+.gitignore
+backendstorage.zip
+npm-debug.log
+Dockerfile
+.dockerignore
+com.txt
+comsql.txt

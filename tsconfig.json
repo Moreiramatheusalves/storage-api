@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "rootDir": "src",
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "src/routes/authRoutes.ts",
+    "src/routes/fileRoutes.ts",
+    "src/routes/historyRoutes.ts",
+    "src/routes/tokenRoutes.ts",
+    "src/db.ts",
+    "src/utils/fileUtils.ts",
+    "src/services/authService.ts",
+    "src/services/fileService.ts",
+    "src/services/historyService.ts",
+    "src/services/tokenService.ts"
+  ]
+}

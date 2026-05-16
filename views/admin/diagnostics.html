@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Storage Admin | Diagnóstico</title>
+    <link rel="stylesheet" href="/public/admin.css" />
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="small">Storage API</div>
+                <div class="title">Admin Console</div>
+                <div class="desc">Diagnóstico operacional do ambiente, banco SQLite e diretórios reais.</div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a class="sidebar-link" data-nav="dashboard" href="/admin/dashboard">Dashboard</a>
+                <a class="sidebar-link" data-nav="applications" href="/admin/applications-ui">Aplicações</a>
+                <a class="sidebar-link" data-nav="history" href="/admin/history-ui">Histórico</a>
+                <a class="sidebar-link" data-nav="storage" href="/admin/storage">Arquivos</a>
+                <a class="sidebar-link" data-nav="diagnostics" href="/admin/diagnostics-ui">Diagnóstico</a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn btn-secondary btn-block" data-action="logout">Sair</button>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="main-inner">
+                <div class="topbar">
+                    <div>
+                        <h1>Diagnóstico</h1>
+                        <p>Verifique caminhos reais, banco SQLite, storage ativo e estado operacional da API.</p>
+                    </div>
+                    <div class="topbar-actions">
+                        <button class="btn btn-secondary" id="reloadBtn">Atualizar</button>
+                        <a class="btn btn-primary" href="/admin/diagnostics" target="_blank">Abrir JSON</a>
+                    </div>
+                </div>
+
+                <div id="diagnosticsAlert" class="alert"></div>
+
+                <div class="grid grid-3">
+                    <div class="card kpi">
+                        <div class="kpi-label">Banco</div>
+                        <div class="kpi-value" id="kpiDatabase">-</div>
+                        <div class="kpi-note" id="kpiDatabaseNote">SQLite oficial</div>
+                    </div>
+
+                    <div class="card kpi">
+                        <div class="kpi-label">Aplicações</div>
+                        <div class="kpi-value" id="kpiApplications">-</div>
+                        <div class="kpi-note">Total cadastrado no SQLite</div>
+                    </div>
+
+                    <div class="card kpi">
+                        <div class="kpi-label">Arquivos</div>
+                        <div class="kpi-value" id="kpiFiles">-</div>
+                        <div class="kpi-note" id="kpiFilesNote">Amostra do diretório apps</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-3" style="margin-top:20px;">
+                    <div class="card kpi">
+                        <div class="kpi-label">Histórico</div>
+                        <div class="kpi-value" id="kpiHistory">-</div>
+                        <div class="kpi-note">Eventos auditados</div>
+                    </div>
+
+                    <div class="card kpi">
+                        <div class="kpi-label">Diretórios</div>
+                        <div class="kpi-value" id="kpiDirectories">-</div>
+                        <div class="kpi-note">Pastas detectadas na amostra</div>
+                    </div>
+
+                    <div class="card kpi">
+                        <div class="kpi-label">JSON legado</div>
+                        <div class="kpi-value" id="kpiLegacy">-</div>
+                        <div class="kpi-note">Deve estar desativado</div>
+                    </div>
+                </div>
+
+                <section class="card" style="margin-top:20px;">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Status operacional</h2>
+                            <p class="card-subtitle">Alertas rápidos para detectar configuração errada antes de causar
+                                perda de dados.</p>
+                        </div>
+                    </div>
+
+                    <div id="statusChecks" class="grid grid-2"></div>
+                </section>
+
+                <section class="card" style="margin-top:20px;">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Caminhos reais</h2>
+                            <p class="card-subtitle">Esses são os diretórios efetivamente usados pela API em runtime.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Caminho</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pathsTable"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <div class="grid grid-2" style="margin-top:20px;">
+                    <section class="card">
+                        <div class="card-header">
+                            <div>
+                                <h2 class="card-title">SQLite</h2>
+                                <p class="card-subtitle">Arquivo principal, WAL, SHM e contagens das tabelas.</p>
+                            </div>
+                        </div>
+
+                        <div class="table-wrap">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="databaseTable"></tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="card">
+                        <div class="card-header">
+                            <div>
+                                <h2 class="card-title">Storage</h2>
+                                <p class="card-subtitle">Resumo dos diretórios e amostra de arquivos.</p>
+                            </div>
+                        </div>
+
+                        <div class="table-wrap">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="storageTable"></tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <section class="card" style="margin-top:20px;">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">JSON bruto</h2>
+                            <p class="card-subtitle">Útil para suporte técnico e conferência rápida.</p>
+                        </div>
+                    </div>
+
+                    <pre class="code-block" id="rawJson">Carregando...</pre>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="/public/admin.js"></script>
+    <script>
+        function formatBytes(value) {
+            const size = Number(value || 0);
+
+            if (!size) return '0 B';
+
+            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const index = Math.min(Math.floor(Math.log(size) / Math.log(1024)), units.length - 1);
+            const converted = size / Math.pow(1024, index);
+
+            return `${converted.toFixed(converted >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
+        }
+
+        function statusBadge(ok, okText = 'OK', errorText = 'Atenção') {
+            return `
+        <span class="badge ${ok ? 'badge-success' : 'badge-danger'}">
+          ${ok ? okText : errorText}
+        </span>
+      `;
+        }
+
+        function renderPathRow(label, item) {
+            return `
+        <tr>
+          <td><strong>${escapeHtml(label)}</strong></td>
+          <td><span class="inline-code">${escapeHtml(item?.path || '-')}</span></td>
+          <td>${statusBadge(Boolean(item?.exists), item?.type || 'OK', 'Ausente')}</td>
+        </tr>
+      `;
+        }
+
+        function renderInfoRow(label, value) {
+            return `
+        <tr>
+          <td><strong>${escapeHtml(label)}</strong></td>
+          <td>${escapeHtml(value)}</td>
+        </tr>
+      `;
+        }
+
+        function renderCheck(title, ok, description) {
+            return `
+        <div class="card" style="box-shadow:none;">
+          <div class="card-header" style="margin-bottom:0;">
+            <div>
+              <h3 class="card-title" style="font-size:18px;">${escapeHtml(title)}</h3>
+              <p class="card-subtitle">${escapeHtml(description)}</p>
+            </div>
+            ${statusBadge(ok)}
+          </div>
+        </div>
+      `;
+        }
+
+        function hasBadRuntimePath(value) {
+            const path = String(value || '');
+
+            return (
+                path.includes('C:\\') ||
+                path.includes('C:/') ||
+                path === '/app' ||
+                path.startsWith('/app/')
+            );
+        }
+
+        async function loadDiagnostics() {
+            clearAlert('diagnosticsAlert');
+
+            const response = await api('/admin/diagnostics');
+            const data = response.data || {};
+            const runtime = data.runtime || {};
+            const database = data.database || {};
+            const storage = data.storage || {};
+            const legacy = data.legacy || {};
+
+            const paths = storage.paths || {};
+            const tables = database.tables || {};
+            const sample = storage.sample || {};
+            const summaries = storage.summaries || {};
+
+            document.getElementById('kpiDatabase').textContent = database.exists ? 'OK' : 'ERRO';
+            document.getElementById('kpiDatabaseNote').textContent =
+                `${database.engine || '-'} • ${formatBytes(database.sizeBytes || 0)}`;
+
+            document.getElementById('kpiApplications').textContent = tables.applications ?? '-';
+            document.getElementById('kpiHistory').textContent = tables.history ?? '-';
+            document.getElementById('kpiFiles').textContent = sample.files ?? '-';
+            document.getElementById('kpiFilesNote').textContent =
+                sample.limitReached ? `Amostra limitada em ${sample.scanLimit}` : 'Amostra completa';
+            document.getElementById('kpiDirectories').textContent = sample.directories ?? '-';
+            document.getElementById('kpiLegacy').textContent = legacy.jsonStoreEnabled ? 'ATIVO' : 'OFF';
+
+            const runtimePaths = [
+                runtime.storageRootDir,
+                runtime.storageDir,
+                runtime.appsStorageDir,
+                runtime.dataDir,
+                runtime.dbDir,
+                runtime.dbPath,
+                runtime.tmpDir
+            ];
+
+            const checks = [
+                {
+                    title: 'Ambiente Linux',
+                    ok: runtime.platform === 'linux',
+                    description: `Plataforma atual: ${runtime.platform || '-'}`
+                },
+                {
+                    title: 'Storage root correto',
+                    ok: runtime.storageRootDir === '/var/lib/storage-api',
+                    description: `Root atual: ${runtime.storageRootDir || '-'}`
+                },
+                {
+                    title: 'Sem path antigo /app',
+                    ok: !runtimePaths.some(path => String(path || '').startsWith('/app/')),
+                    description: 'Nenhum diretório operacional deve apontar para /app.'
+                },
+                {
+                    title: 'Sem path Windows',
+                    ok: !runtimePaths.some(hasBadRuntimePath),
+                    description: 'Nenhum diretório operacional deve apontar para C:\\ ou pasta local.'
+                },
+                {
+                    title: 'SQLite existe',
+                    ok: Boolean(database.exists),
+                    description: `Banco: ${runtime.dbPath || '-'}`
+                },
+                {
+                    title: 'JSON legado desligado',
+                    ok: legacy.jsonStoreEnabled === false && legacy.jsonStoreExists === false,
+                    description: 'O store oficial deve ser somente SQLite.'
+                }
+            ];
+
+            document.getElementById('statusChecks').innerHTML = checks
+                .map(item => renderCheck(item.title, item.ok, item.description))
+                .join('');
+
+            document.getElementById('pathsTable').innerHTML = [
+                renderPathRow('Storage root', paths.storageRoot),
+                renderPathRow('Storage', paths.storageDir),
+                renderPathRow('Apps', paths.appsStorageDir),
+                renderPathRow('Data', paths.dataDir),
+                renderPathRow('DB', paths.dbDir),
+                renderPathRow('TMP', paths.tmpDir)
+            ].join('');
+
+            document.getElementById('databaseTable').innerHTML = [
+                renderInfoRow('Engine', database.engine || '-'),
+                renderInfoRow('Store oficial', database.officialStore || '-'),
+                renderInfoRow('SQLite existe', database.exists ? 'Sim' : 'Não'),
+                renderInfoRow('SQLite tamanho', formatBytes(database.sizeBytes)),
+                renderInfoRow('WAL existe', database.walExists ? 'Sim' : 'Não'),
+                renderInfoRow('WAL tamanho', formatBytes(database.walSizeBytes)),
+                renderInfoRow('SHM existe', database.shmExists ? 'Sim' : 'Não'),
+                renderInfoRow('SHM tamanho', formatBytes(database.shmSizeBytes)),
+                renderInfoRow('Aplicações', tables.applications ?? 0),
+                renderInfoRow('Admins', tables.adminUsers ?? 0),
+                renderInfoRow('Histórico', tables.history ?? 0)
+            ].join('');
+
+            document.getElementById('storageTable').innerHTML = [
+                renderInfoRow('Diretórios em storage root', summaries.storageRoot?.directories ?? 0),
+                renderInfoRow('Entradas em storage', summaries.storage?.entries ?? 0),
+                renderInfoRow('Diretórios de aplicação', storage.applicationDirectories ?? 0),
+                renderInfoRow('Arquivos na amostra', sample.files ?? 0),
+                renderInfoRow('Diretórios na amostra', sample.directories ?? 0),
+                renderInfoRow('Entradas escaneadas', sample.scannedEntries ?? 0),
+                renderInfoRow('Limite do scan', sample.scanLimit ?? 0),
+                renderInfoRow('Limite atingido', sample.limitReached ? 'Sim' : 'Não')
+            ].join('');
+
+            document.getElementById('rawJson').textContent = JSON.stringify(data, null, 2);
+        }
+
+        document.getElementById('reloadBtn').addEventListener('click', () => {
+            loadDiagnostics().catch((error) => {
+                showAlert('diagnosticsAlert', 'error', error.message);
+            });
+        });
+
+        loadDiagnostics().catch((error) => {
+            showAlert('diagnosticsAlert', 'error', error.message);
+            document.getElementById('rawJson').textContent = 'Não foi possível carregar o diagnóstico.';
+        });
+    </script>
+</body>
+
+</html>
