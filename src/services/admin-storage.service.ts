@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { env } from '../config/env';
 import { AppError } from '../errors/app.error';
-import { ensureAllowedFileType } from '../utils/file-signature.util';
+import { ensureAllowedReadableFileType } from '../utils/file-signature.util.js';
 import { HistoryService } from './history.service';
 import { SqlStoreService } from './sql-store.service';
 
@@ -223,13 +223,22 @@ export class AdminStorageService {
     }
 
     const fileBuffer = await fs.promises.readFile(absolutePath);
-    const mimeType = ensureAllowedFileType(fileBuffer);
+
+    const safeRelativePath = relativePath.replace(/\\/g, '/').replace(/^\/+/, '');
+
+    const allowExecutable =
+      safeRelativePath === 'downloads/print-agent/AppOrdersPrintAgent-Setup-1.0.0.exe' ||
+      safeRelativePath.endsWith('/downloads/print-agent/AppOrdersPrintAgent-Setup-1.0.0.exe');
+
+    const mimeType = ensureAllowedReadableFileType(fileBuffer, {
+      allowExecutable,
+    });
 
     return {
       absolutePath,
       mimeType,
       fileName: path.basename(absolutePath),
-      sizeBytes: stat.size
+      sizeBytes: stat.size,
     };
   }
 

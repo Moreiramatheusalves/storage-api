@@ -1,8 +1,10 @@
 ﻿import fs from 'fs';
+import { once } from 'events';
 import { pipeline } from 'stream/promises';
 import { Request, Response } from 'express';
 import { env } from '../config/env';
 import { AppError } from '../errors/app.error';
+import { FileNotFoundError } from '../errors/file-not-found.error';
 import { StorageManagerService } from '../services/storage-manager.service';
 
 const storageManagerService = new StorageManagerService();
@@ -137,12 +139,24 @@ export class StorageController {
       relativePath,
       { ip: req.ip, userAgent: req.get('user-agent') ?? undefined }
     );
+
+    const fileStream = fs.createReadStream(payload.absolutePath);
+    try {
+      await once(fileStream, 'open');
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        throw new FileNotFoundError();
+      }
+
+      throw error;
+    }
+
     res.setHeader('Content-Type', payload.mimeType);
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Cache-Control', 'public, max-age=3600');
     res.setHeader('Content-Length', String(payload.sizeBytes));
     res.setHeader('Content-Disposition', `inline; filename="${payload.fileName}"`);
-    await pipeline(fs.createReadStream(payload.absolutePath), res);
+    await pipeline(fileStream, res);
   }
 
   async remove(req: Request, res: Response): Promise<void> {
@@ -156,4 +170,3 @@ export class StorageController {
     res.json({ success: true, message: 'Arquivo removido.' });
   }
 }
-

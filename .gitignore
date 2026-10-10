@@ -58,3 +58,4 @@ Thumbs.db
 
 docker-compose.yml
 !docker-compose.example.yml
+*.tgz
